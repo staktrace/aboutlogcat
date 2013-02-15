@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 mkdir classes
-javac -source 1.6 -target 1.6 -d classes LogcatGrabber.java
+javac -source 1.6 -target 1.6 -d classes -cp $HOME/android/sdk/platforms/android-17/android.jar LogcatGrabber.java
 $HOME/android/sdk/platform-tools/dx --dex --verbose --output=java-code.jar classes
 zip aboutlogcat.xpi java-code.jar install.rdf bootstrap.js
 rm -rf classes java-code.jar

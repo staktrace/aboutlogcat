@@ -1,8 +1,18 @@
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.util.Map;
+
+import android.os.Handler;
+import android.os.Message;
 
 public class LogcatGrabber {
-    public LogcatGrabber() {
+    public LogcatGrabber(Map<String, Handler.Callback> callbacks) {
+        callbacks.put("logcat:get", new Handler.Callback() {
+            public boolean handleMessage(Message m) {
+                m.getData().putString("response", getLogcat());
+                return true;
+            }
+        });
     }
 
     public static String getLogcat() {
