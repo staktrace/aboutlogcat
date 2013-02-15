@@ -5,9 +5,12 @@ var Cm = Components.manager;
 Cm.QueryInterface(Ci.nsIComponentRegistrar);
 
 var gMenuId = -1;
+var gDexLoaded = false;
 
 Cu.import("resource://gre/modules/Services.jsm");
+Cu.import("resource://gre/modules/AddonManager.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+Cu.import("resource://gre/modules/JNI.jsm");
 
 function dump(a) {
     Cc["@mozilla.org/consoleservice;1"].getService(Ci.nsIConsoleService).logStringMessage(a);
@@ -25,8 +28,13 @@ AboutLogcat.prototype = {
     contractID: "@mozilla.org/network/protocol/about;1?what=logcat",
  
     newChannel: function(uri) {
-        var ioService = Cc["@mozilla.org/network/io-service;1"].getService(Ci.nsIIOService);
         var logcat = 'NO LOGCAT AVAILABLE';
+        try {
+        } catch (e) {
+            logcat = 'Error obtaining logcat: ' + e;
+        }
+
+        var ioService = Cc["@mozilla.org/network/io-service;1"].getService(Ci.nsIIOService);
         var content = 'data:text/plain,' + logcat;
         var channel = ioService.newChannel(content, null, null);
         var securityManager = Cc["@mozilla.org/scriptsecuritymanager;1"].getService(Ci.nsIScriptSecurityManager);
@@ -52,6 +60,12 @@ function attachTo(aWindow) {
         gMenuId = aWindow.NativeWindow.menu.add("View logcat", null, function() {
             aWindow.BrowserApp.addTab("about:logcat");
         });
+    }
+    if (!gDexLoaded) {
+        AddonManager.getAddonByID("projects.aboutlogcat.ffext@staktrace.com", function(addon) {
+            aWindow.NativeWindow.loadDex(addon.getResourceURI('java-code.jar').spec, 'LogcatGrabber');
+        });
+        gDexLoaded = true;
     }
 }
 
