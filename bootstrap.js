@@ -40,9 +40,7 @@ AboutLogcat.prototype = {
         var content = 'data:text/plain,' + encodeURIComponent(logcat);
         var channel = ioService.newChannel(content, null, null);
         var securityManager = Cc["@mozilla.org/scriptsecuritymanager;1"].getService(Ci.nsIScriptSecurityManager);
-        var principal = securityManager.getSystemPrincipal(uri);
         channel.originalURI = uri;
-        channel.owner = principal;
         return channel;
     },
 
