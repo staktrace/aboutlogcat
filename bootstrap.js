@@ -70,7 +70,7 @@ AboutLogcat.prototype = {
             if (reverse) {
                 logcat = logcat.reverse();
             }
-            logcat = logcat.map(ln => fcb(ln) && '<div class="' + ln.split(" ")[4] + '">' + ln + '</div>' || '').filter(String);
+            logcat = logcat.map(ln => fcb(ln) && '<div class="' + ln.split(/\s+/)[4] + '">' + ln + '</div>' || '').filter(String);
             var n = logcat.length;
             logcat = '<html><head><style type="text/css">'
                 + '.V{background-color:#eee}'
