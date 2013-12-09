@@ -13,6 +13,8 @@ Cu.import("resource://gre/modules/AddonManager.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/JNI.jsm");
 
+var gPrefService = Services.prefs.getBranch('extensions.aboutlogcat.');
+
 function dump(a) {
     Cc["@mozilla.org/consoleservice;1"].getService(Ci.nsIConsoleService).logStringMessage(a);
 }
@@ -27,19 +29,44 @@ AboutLogcat.prototype = {
     classDescription: "about:logcat",
     classID: Components.ID("{2ccd132e-7fc6-4a52-a766-9e5b61c1cb03}"),
     contractID: "@mozilla.org/network/protocol/about;1?what=logcat",
- 
+
     newChannel: function(uri) {
         var logcat = 'NO LOGCAT AVAILABLE';
+        let reverse = gPrefService.getPrefType('reverse') && gPrefService.getBoolPref('reverse');
+        let html = gPrefService.getPrefType('html') && gPrefService.getBoolPref('html');
         try {
             logcat = gWindow.sendMessageToJava({ type: "logcat:get" });
         } catch (e) {
             logcat = 'Error obtaining logcat: ' + e;
         }
 
-        var ioService = Cc["@mozilla.org/network/io-service;1"].getService(Ci.nsIIOService);
-        var content = 'data:text/plain,' + encodeURIComponent(logcat);
-        var channel = ioService.newChannel(content, null, null);
-        var securityManager = Cc["@mozilla.org/scriptsecuritymanager;1"].getService(Ci.nsIScriptSecurityManager);
+        if (html) {
+            let c = Cc["@mozilla.org/intl/scriptableunicodeconverter"]
+                .createInstance(Ci.nsIScriptableUnicodeConverter);
+            c.charset = 'UTF-8';
+            let p = Cc["@mozilla.org/parserutils;1"].getService(Ci.nsIParserUtils);
+            logcat = p.convertToPlainText(c.ConvertFromUnicode(logcat),0xff,0).split("\n");
+            if (reverse) {
+                logcat = logcat.reverse();
+            }
+            logcat = logcat.map('<div class="' + ln.split(/\s+/)[4] + '">' + ln + '</div>' || '').filter(String);
+            var n = logcat.length;
+            logcat = '<html><head><style type="text/css">'
+                + '.V{background-color:#eee}'
+                + '.D{background-color:#abc}'
+                + '.I{background-color:#def}'
+                + '.W{background-color:#ffd}'
+                + '.E{background-color:#fdd}'
+                + '.F{background-color:#f00}'
+                + 'div{border-bottom:1px solid #444}'
+                + 'html,body{margin:0 auto}'
+                + '</style></head><body><h3>Showing ' + n + ' entries.</h3>' + logcat.join("");
+            var content = 'data:text/html;charset=UTF-8,';
+        } else {
+            var content = 'data:text/plain,';
+        }
+
+        var channel = Services.io.newChannel(content + encodeURIComponent(logcat), null, null);
         channel.originalURI = uri;
         return channel;
     },
