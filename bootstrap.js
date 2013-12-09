@@ -44,14 +44,12 @@ AboutLogcat.prototype = {
         if (filter) {
 
             if (filter[0] == '/') {
-                fcb = (() => {
-                    try {
-                        filter = new RegExp(filter);
-                    } catch (e) {
-                        filter = /./;
-                    }
-                    return s => filter.test(s);
-                });
+                try {
+                    filter = new RegExp(filter.substr(1,filter.length-2));
+                } catch (e) {
+                    filter = /./;
+                }
+                fcb = s => filter.test(s);
             } else {
                 fcb = s => ~s.indexOf(filter);
             }
