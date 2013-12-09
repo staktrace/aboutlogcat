@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
-<vbox xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
-	<setting pref="extensions.aboutlogcat.html" type="bool" title="Use Coloured HTML">
-	</setting>
-	<setting pref="extensions.aboutlogcat.reverse" type="bool" title="Reverse mode">
-		Show entries in reverse (ie, ascendant) mode.
-	</setting>
-</vbox>
+	<vbox xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+		<setting pref="extensions.aboutlogcat.html" type="bool" title="Use Coloured HTML"></setting>
+		<setting pref="extensions.aboutlogcat.filter" type="string" title="Filter"></setting>
+		<setting pref="extensions.aboutlogcat.reverse" type="bool" title="Reverse mode">
+			Show entries in reverse (ie, newer first) mode.
+		</setting>
+	</vbox>

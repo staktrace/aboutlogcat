@@ -33,6 +33,7 @@ AboutLogcat.prototype = {
     newChannel: function(uri) {
 		var reverse = gPrefService.getPrefType('reverse') && gPrefService.getBoolPref('reverse');
 		var html = gPrefService.getPrefType('html') && gPrefService.getBoolPref('html');
+		var filter = gPrefService.getPrefType('filter') && gPrefService.getCharPref('filter');
         var logcat = 'NO LOGCAT AVAILABLE';
         try {
             logcat = gWindow.sendMessageToJava({ type: "logcat:get" });
@@ -40,10 +41,20 @@ AboutLogcat.prototype = {
             logcat = 'Error obtaining logcat: ' + e;
         }
 		
+		var fcb = filter ? (filter[0] == '/' ? (() => {
+			try {
+				filter = new RegExp(filter);
+			} catch(e) {
+				filter = /./;
+			}
+			return s => filter.test(s);
+		}) : s => ~s.indexOf(filter)) : s => s;
+		
 		if(html) {
 			logcat = logcat.split("\n");
 			if(reverse) logcat = logcat.reverse();
-			logcat = logcat.filter(String).map(ln => '<div class="' + ln.split(" ")[4] + '">' + ln + '</div>');
+			logcat = logcat.map(ln => fcb(ln) && '<div class="' + ln.split(" ")[4] + '">' + ln + '</div>' || '').filter(String);
+			var n = logcat.length;
 			logcat = '<html><head><style type="text/css">'
 				+ '.V{background-color:#eee}'
 				+ '.D{background-color:#abc}'
@@ -52,7 +63,7 @@ AboutLogcat.prototype = {
 				+ '.E{background-color:#fdd}'
 				+ '.F{background-color:#f00}'
 				+ 'div{border-bottom:1px solid #444}'
-				+ '</style></head><body>' + logcat.join("");
+				+ '</style></head><body><h3>Showing ' + n + ' entries.</h3>' + logcat.join("");
 			var content = 'data:text/html,';
 		} else {
 			var content = 'data:text/plain,';
