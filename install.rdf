@@ -2,7 +2,7 @@
 <RDF xmlns="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:em="http://www.mozilla.org/2004/em-rdf#">
   <Description about="urn:mozilla:install-manifest">
     <em:id>projects.aboutlogcat.ffext@staktrace.com</em:id>
-    <em:version>1.1</em:version>
+    <em:version>1.2a1</em:version>
     <em:type>2</em:type>
     <em:bootstrap>true</em:bootstrap>
     <em:unpack>true</em:unpack>
@@ -11,8 +11,8 @@
     <em:targetApplication>
       <Description>
         <em:id>{aa3c5121-dab2-40e2-81ca-7ea25febc110}</em:id>
-        <em:minVersion>21.0a1</em:minVersion>
-        <em:maxVersion>22.0</em:maxVersion>
+        <em:minVersion>22.0</em:minVersion>
+        <em:maxVersion>28.*</em:maxVersion>
       </Description>
     </em:targetApplication>
 
@@ -20,6 +20,7 @@
     <em:name>About:Logcat</em:name>
     <em:description>Display logcat info on the synthesized about:logcat page</em:description>
     <em:creator>Kartikaya Gupta</em:creator>
+    <em:contributor>Diego Casorran</em:contributor>
     <em:homepageURL>http://github.com/staktrace/aboutlogcat/</em:homepageURL>
   </Description>
 </RDF>

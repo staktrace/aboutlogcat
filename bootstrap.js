@@ -13,6 +13,8 @@ Cu.import("resource://gre/modules/AddonManager.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/JNI.jsm");
 
+var gPrefService = Services.prefs.getBranch('extensions.aboutlogcat.');
+
 function dump(a) {
     Cc["@mozilla.org/consoleservice;1"].getService(Ci.nsIConsoleService).logStringMessage(a);
 }
@@ -29,17 +31,36 @@ AboutLogcat.prototype = {
     contractID: "@mozilla.org/network/protocol/about;1?what=logcat",
  
     newChannel: function(uri) {
+		var reverse = gPrefService.getPrefType('reverse') && gPrefService.getBoolPref('reverse');
+		var html = gPrefService.getPrefType('html') && gPrefService.getBoolPref('html');
         var logcat = 'NO LOGCAT AVAILABLE';
         try {
             logcat = gWindow.sendMessageToJava({ type: "logcat:get" });
         } catch (e) {
             logcat = 'Error obtaining logcat: ' + e;
         }
+		
+		if(html) {
+			logcat = logcat.split("\n");
+			if(reverse) logcat = logcat.reverse();
+			logcat = logcat.filter(String).map(ln => '<div class="' + ln.split(" ")[4] + '">' + ln + '</div>');
+			logcat = '<html><head><style type="text/css">'
+				+ '.V{background-color:#eee}'
+				+ '.D{background-color:#abc}'
+				+ '.I{background-color:#def}'
+				+ '.W{background-color:#ffd}'
+				+ '.E{background-color:#fdd}'
+				+ '.F{background-color:#f00}'
+				+ 'div{border-bottom:1px solid #444}'
+				+ '</style></head><body>' + logcat.join("");
+			var content = 'data:text/html,';
+		} else {
+			var content = 'data:text/plain,';
+		}
 
         var ioService = Cc["@mozilla.org/network/io-service;1"].getService(Ci.nsIIOService);
-        var content = 'data:text/plain,' + encodeURIComponent(logcat);
-        var channel = ioService.newChannel(content, null, null);
-        var securityManager = Cc["@mozilla.org/scriptsecuritymanager;1"].getService(Ci.nsIScriptSecurityManager);
+        var channel = ioService.newChannel(content + encodeURIComponent(logcat), null, null);
+        // var securityManager = Cc["@mozilla.org/scriptsecuritymanager;1"].getService(Ci.nsIScriptSecurityManager);
         channel.originalURI = uri;
         return channel;
     },
