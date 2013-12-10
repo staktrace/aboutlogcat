@@ -31,13 +31,32 @@ AboutLogcat.prototype = {
     contractID: "@mozilla.org/network/protocol/about;1?what=logcat",
 
     newChannel: function(uri) {
-        var logcat = 'NO LOGCAT AVAILABLE';
         let reverse = gPrefService.getPrefType('reverse') && gPrefService.getBoolPref('reverse');
         let html = gPrefService.getPrefType('html') && gPrefService.getBoolPref('html');
+        let filter = gPrefService.getPrefType('filter') && gPrefService.getCharPref('filter');
+        let logcat = 'NO LOGCAT AVAILABLE', fcb;
         try {
             logcat = gWindow.sendMessageToJava({ type: "logcat:get" });
         } catch (e) {
             logcat = 'Error obtaining logcat: ' + e;
+        }
+
+        if (filter) {
+
+            if (filter[0] == '/') {
+                try {
+                    filter = new RegExp(filter.substr(1,filter.length-2));
+                } catch (e) {
+                    filter = /./;
+                }
+                fcb = s => filter.test(s);
+            } else {
+                fcb = s => ~s.indexOf(filter);
+            }
+
+        } else {
+
+            fcb = s => s;
         }
 
         if (html) {
@@ -49,7 +68,7 @@ AboutLogcat.prototype = {
             if (reverse) {
                 logcat = logcat.reverse();
             }
-            logcat = logcat.map('<div class="' + ln.split(/\s+/)[4] + '">' + ln + '</div>' || '').filter(String);
+            logcat = logcat.map(ln => fcb(ln) && '<div class="' + ln.split(/\s+/)[4] + '">' + ln + '</div>' || '').filter(String);
             var n = logcat.length;
             logcat = '<html><head><style type="text/css">'
                 + '.V{background-color:#eee}'

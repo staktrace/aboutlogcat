@@ -4,4 +4,5 @@
 	<setting pref="extensions.aboutlogcat.reverse" type="bool" title="Reverse mode">
 		Show entries in reverse (ie, newer first) mode.
 	</setting>
+	<setting pref="extensions.aboutlogcat.filter" type="string" title="Filter"></setting>
 </vbox>
