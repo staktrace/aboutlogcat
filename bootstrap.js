@@ -85,7 +85,7 @@ AboutLogcat.prototype = {
             var content = 'data:text/html;charset=UTF-8,';
         } else {
             logcat = logcat.join('\n');
-            var content = 'data:text/plain,';
+            var content = 'data:text/plain;charset=UTF-8,';
         }
 
         var channel = Services.io.newChannel(content + encodeURIComponent(logcat), null, null);
