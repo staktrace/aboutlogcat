@@ -34,18 +34,19 @@ AboutLogcat.prototype = {
         let reverse = gPrefService.getPrefType('reverse') && gPrefService.getBoolPref('reverse');
         let html = gPrefService.getPrefType('html') && gPrefService.getBoolPref('html');
         let filter = gPrefService.getPrefType('filter') && gPrefService.getCharPref('filter');
-        let logcat = 'NO LOGCAT AVAILABLE', fcb;
+
+        let logcat = 'NO LOGCAT AVAILABLE';
         try {
             logcat = gWindow.sendMessageToJava({ type: "logcat:get" });
         } catch (e) {
             logcat = 'Error obtaining logcat: ' + e;
         }
 
+        let fcb = s => s;
         if (filter) {
-
             if (filter[0] == '/') {
                 try {
-                    filter = new RegExp(filter.substr(1,filter.length-2));
+                    filter = new RegExp(filter.substr(1, filter.length - 2));
                 } catch (e) {
                     filter = /./;
                 }
@@ -53,32 +54,27 @@ AboutLogcat.prototype = {
             } else {
                 fcb = s => ~s.indexOf(filter);
             }
-
-        } else {
-
-            fcb = s => s;
         }
 
         if (html) {
-            let c = Cc["@mozilla.org/intl/scriptableunicodeconverter"]
-                .createInstance(Ci.nsIScriptableUnicodeConverter);
+            let c = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
             c.charset = 'UTF-8';
             let p = Cc["@mozilla.org/parserutils;1"].getService(Ci.nsIParserUtils);
-            logcat = p.convertToPlainText(c.ConvertFromUnicode(logcat),0xff,0).split("\n");
+            logcat = p.convertToPlainText(c.ConvertFromUnicode(logcat), 0xff, 0).split("\n");
             if (reverse) {
                 logcat = logcat.reverse();
             }
             logcat = logcat.map(ln => fcb(ln) && '<div class="' + ln.split(/\s+/)[4] + '">' + ln + '</div>' || '').filter(String);
             var n = logcat.length;
-            logcat = '<html><head><style type="text/css">'
-                + '.V{background-color:#eee}'
-                + '.D{background-color:#abc}'
-                + '.I{background-color:#def}'
-                + '.W{background-color:#ffd}'
-                + '.E{background-color:#fdd}'
-                + '.F{background-color:#f00}'
-                + 'div{border-bottom:1px solid #444}'
-                + 'html,body{margin:0 auto}'
+            logcat = '<html><head><style type="text/css">\n'
+                + '.V{background-color:#eee}\n'
+                + '.D{background-color:#abc}\n'
+                + '.I{background-color:#def}\n'
+                + '.W{background-color:#ffd}\n'
+                + '.E{background-color:#fdd}\n'
+                + '.F{background-color:#f00}\n'
+                + 'div{border-bottom:1px solid #444}\n'
+                + 'html,body{margin:0 auto}\n'
                 + '</style></head><body><h3>Showing ' + n + ' entries.</h3>' + logcat.join("");
             var content = 'data:text/html;charset=UTF-8,';
         } else {
@@ -142,7 +138,6 @@ var browserListener = {
 };
 
 function attachToStub(aWindow) {
-
     if (aWindow.document.readyState == "complete") {
         attachTo(aWindow);
     } else {
