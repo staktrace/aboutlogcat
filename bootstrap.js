@@ -56,15 +56,19 @@ AboutLogcat.prototype = {
             }
         }
 
+        let c = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
+        c.charset = 'UTF-8';
+        let p = Cc["@mozilla.org/parserutils;1"].getService(Ci.nsIParserUtils);
+        logcat = p.convertToPlainText(c.ConvertFromUnicode(logcat), 0xff, 0).split("\n");
+
+        if (reverse) {
+            logcat = logcat.reverse();
+        }
+
+        logcat = logcat.map(ln => fcb(ln) && ln || '').filter(String);
+
         if (html) {
-            let c = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
-            c.charset = 'UTF-8';
-            let p = Cc["@mozilla.org/parserutils;1"].getService(Ci.nsIParserUtils);
-            logcat = p.convertToPlainText(c.ConvertFromUnicode(logcat), 0xff, 0).split("\n");
-            if (reverse) {
-                logcat = logcat.reverse();
-            }
-            logcat = logcat.map(ln => fcb(ln) && '<div class="' + ln.split(/\s+/)[4] + '">' + ln + '</div>' || '').filter(String);
+            logcat = logcat.map(ln => '<div class="' + ln.split(/\s+/)[4] + '">' + ln + '</div>');
             var n = logcat.length;
             logcat = '<html><head><style type="text/css">\n'
                 + '.V{background-color:#eee}\n'
@@ -78,6 +82,7 @@ AboutLogcat.prototype = {
                 + '</style></head><body><h3>Showing ' + n + ' entries.</h3>' + logcat.join("");
             var content = 'data:text/html;charset=UTF-8,';
         } else {
+            logcat = logcat.join('\n');
             var content = 'data:text/plain,';
         }
 
