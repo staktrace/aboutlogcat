@@ -130,11 +130,7 @@ function detachFrom(aWindow) {
 
 var browserListener = {
     onOpenWindow: function(aWindow) {
-        var win = aWindow.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindow);
-        win.addEventListener("UIReady", function listener(aEvent) {
-            win.removeEventListener("UIReady", listener, false);
-            attachTo(win);
-        }, false);
+        attachToStub(aWindow.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindow));
     },
 
     onCloseWindow: function(aWindow) {
@@ -145,20 +141,28 @@ var browserListener = {
     }
 };
 
+function attachToStub(aWindow) {
+
+    if (aWindow.document.readyState == "complete") {
+        attachTo(aWindow);
+    } else {
+        aWindow.addEventListener("UIReady", function listener() {
+            aWindow.removeEventListener("UIReady", listener, false);
+            attachTo(aWindow);
+        }, false);
+    }
+}
+
 function startup(aData, aReason) {
     let {AddonManager} = Cu.import("resource://gre/modules/AddonManager.jsm", {});
     AddonManager.getAddonByID(aData.id, function(aAddon) {
         gJavaCodeURI = aAddon.getResourceURI('java-code.jar').spec;
+        let enumerator = Services.wm.getEnumerator("navigator:browser");
+        while (enumerator.hasMoreElements()) {
+            attachToStub(enumerator.getNext().QueryInterface(Ci.nsIDOMWindow));
+        }
+        Services.wm.addListener(browserListener);
     });
-    var enumerator = Services.wm.getEnumerator("navigator:browser");
-    while (enumerator.hasMoreElements()) {
-        // potential race condition here - the window may not be ready yet at
-        // this point, so ideally we would test for that. but i can't find a
-        // property that reflects whether or not UIReady has been fired, so
-        // for now just assume the window is ready
-        attachTo(enumerator.getNext().QueryInterface(Ci.nsIDOMWindow));
-    }
-    Services.wm.addListener(browserListener);
 }
 
 function shutdown(aData, aReason) {
