@@ -7,9 +7,9 @@ Cm.QueryInterface(Ci.nsIComponentRegistrar);
 var gWindow = null;
 var gMenuId = -1;
 var gDexLoaded = false;
+var gJavaCodeURI = null;
 
 Cu.import("resource://gre/modules/Services.jsm");
-Cu.import("resource://gre/modules/AddonManager.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/JNI.jsm");
 
@@ -109,9 +109,7 @@ function attachTo(aWindow) {
         });
     }
     if (!gDexLoaded) {
-        AddonManager.getAddonByID("projects.aboutlogcat.ffext@staktrace.com", function(addon) {
-            gWindow.NativeWindow.loadDex(addon.getResourceURI('java-code.jar').spec, 'LogcatGrabber');
-        });
+        gWindow.NativeWindow.loadDex(gJavaCodeURI, 'LogcatGrabber');
         gDexLoaded = true;
     }
 }
@@ -123,9 +121,7 @@ function detachFrom(aWindow) {
         Cm.unregisterFactory(AboutLogcat.prototype.classID,
                 AboutLogcatFactory);
         if (gDexLoaded) {
-            AddonManager.getAddonByID("projects.aboutlogcat.ffext@staktrace.com", function(addon) {
-                gWindow.NativeWindow.unloadDex(addon.getResourceURI('java-code.jar').spec);
-            });
+            gWindow.NativeWindow.unloadDex(gJavaCodeURI);
             gDexLoaded = false;
         }
         gWindow = null;
@@ -150,6 +146,10 @@ var browserListener = {
 };
 
 function startup(aData, aReason) {
+    let {AddonManager} = Cu.import("resource://gre/modules/AddonManager.jsm", {});
+    AddonManager.getAddonByID(aData.id, function(aAddon) {
+        gJavaCodeURI = aAddon.getResourceURI('java-code.jar').spec;
+    });
     var enumerator = Services.wm.getEnumerator("navigator:browser");
     while (enumerator.hasMoreElements()) {
         // potential race condition here - the window may not be ready yet at
