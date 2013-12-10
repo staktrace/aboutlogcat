@@ -70,7 +70,9 @@ AboutLogcat.prototype = {
         if (html) {
             logcat = logcat.map(ln => '<div class="' + ln.split(/\s+/)[4] + '">' + ln + '</div>');
             var n = logcat.length;
-            logcat = '<html><head><style type="text/css">\n'
+            logcat = '<html><head>\n'
+                + '<meta name="viewport" content="width=1000">\n'
+                + '<style type="text/css">\n'
                 + '.V{background-color:#eee}\n'
                 + '.D{background-color:#abc}\n'
                 + '.I{background-color:#def}\n'
