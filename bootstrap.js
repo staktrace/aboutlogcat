@@ -8,6 +8,7 @@ var gWindow = null;
 var gMenuId = -1;
 var gDexLoaded = false;
 var gJavaCodeURI = null;
+var gLastTabId = -1;
 
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -30,17 +31,39 @@ AboutLogcat.prototype = {
     classID: Components.ID("{2ccd132e-7fc6-4a52-a766-9e5b61c1cb03}"),
     contractID: "@mozilla.org/network/protocol/about;1?what=logcat",
 
+    observe: function(aSubject, aTopic, aData) {
+        switch (aTopic) {
+            case 'logcat:get:Return':
+                this.populate(this.reformat(JSON.parse(aData).response));
+                break;
+            case 'logcat:get:Error':
+                this.populate("Error: " + JSON.parse(aData).response);
+                break;
+        }
+        Services.obs.removeObserver(this, 'logcat:get:Return', false);
+        Services.obs.removeObserver(this, 'logcat:get:Error', false);
+    },
+
     newChannel: function(uri) {
+        let message = 'Loading... (takes about 5 seconds)';
+        Services.obs.addObserver(this, 'logcat:get:Return', false);
+        Services.obs.addObserver(this, 'logcat:get:Error', false);
+        try {
+            gWindow.sendMessageToJava({ type: "logcat:get", __guid__: "0" });
+        } catch (e) {
+            message = 'Error obtaining logcat: ' + e;
+        }
+
+        var content = 'data:text/html;charset=UTF-8,';
+        var channel = Services.io.newChannel(content + encodeURIComponent(message), null, null);
+        channel.originalURI = uri;
+        return channel;
+    },
+
+    reformat: function(logcat) {
         let reverse = gPrefService.getPrefType('reverse') && gPrefService.getBoolPref('reverse');
         let html = gPrefService.getPrefType('html') && gPrefService.getBoolPref('html');
         let filter = gPrefService.getPrefType('filter') && gPrefService.getCharPref('filter');
-
-        let logcat = 'NO LOGCAT AVAILABLE';
-        try {
-            logcat = gWindow.sendMessageToJava({ type: "logcat:get" });
-        } catch (e) {
-            logcat = 'Error obtaining logcat: ' + e;
-        }
 
         let fcb = s => s;
         if (filter) {
@@ -70,7 +93,7 @@ AboutLogcat.prototype = {
         if (html) {
             logcat = logcat.map(ln => '<div class="' + ln.split(/\s+/)[4] + '">' + ln + '</div>');
             var n = logcat.length;
-            logcat = '<html><head>\n'
+            logcat = '<head>\n'
                 + '<meta name="viewport" content="width=1000">\n'
                 + '<style type="text/css">\n'
                 + '.V{background-color:#eee}\n'
@@ -82,15 +105,18 @@ AboutLogcat.prototype = {
                 + 'div{border-bottom:1px solid #444}\n'
                 + 'html,body{margin:0 auto}\n'
                 + '</style></head><body><h3>Showing ' + n + ' entries.</h3>' + logcat.join("");
-            var content = 'data:text/html;charset=UTF-8,';
         } else {
-            logcat = logcat.join('\n');
-            var content = 'data:text/plain;charset=UTF-8,';
+            logcat = '<body><pre>' + logcat.join('\n') + '</pre></body>';
         }
 
-        var channel = Services.io.newChannel(content + encodeURIComponent(logcat), null, null);
-        channel.originalURI = uri;
-        return channel;
+        return logcat;
+    },
+
+    populate: function(html) {
+        // need some delay to let the tab load first
+        gWindow.setTimeout(function() {
+            gWindow.BrowserApp.getTabForId(gLastTabId).browser.contentDocument.documentElement.innerHTML = html;
+        }, 5000);
     },
 
     getURIFlags: function(uri) {
@@ -108,7 +134,8 @@ function attachTo(aWindow) {
                 AboutLogcat.prototype.contractID,
                 AboutLogcatFactory);
         gMenuId = gWindow.NativeWindow.menu.add("View logcat", null, function() {
-            gWindow.BrowserApp.addTab("about:logcat");
+            let tab = gWindow.BrowserApp.addTab("about:logcat");
+            gLastTabId = tab.id;
         });
     }
     if (!gDexLoaded) {
