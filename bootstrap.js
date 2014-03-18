@@ -57,6 +57,7 @@ AboutLogcat.prototype = {
         var content = 'data:text/html;charset=UTF-8,';
         var channel = Services.io.newChannel(content + encodeURIComponent(message), null, null);
         channel.originalURI = uri;
+        channel.owner = Cc["@mozilla.org/systemprincipal;1"].getService(Ci.nsIPrincipal);
         return channel;
     },
 
@@ -91,7 +92,15 @@ AboutLogcat.prototype = {
         logcat = logcat.map(ln => fcb(ln) && ln || '').filter(String);
 
         if (html) {
-            logcat = logcat.map(ln => '<div class="' + ln.split(/\s+/)[4] + '">' + ln + '</div>');
+            // logcat = logcat.map(ln => '<div class="' + ln.split(/\s+/)[4] + '">' + ln + '</div>');
+            logcat = logcat.map(ln => {
+				if(/\{file: "/.test(ln)) {
+					ln = ln.replace(/\{file: "([^"]+)"/, function(x,f) {
+						return '{file: "<a href="view-source:'+f.split(" -> ").pop()+'">'+f+'</a>"';
+					});
+				}
+				return '<div class="' + ln.split(/\s+/)[4] + '">' + ln + '</div>';
+			});
             var n = logcat.length;
             logcat = '<head>\n'
                 + '<meta name="viewport" content="width=1000">\n'
@@ -116,7 +125,7 @@ AboutLogcat.prototype = {
         // need some delay to let the tab load first
         gWindow.setTimeout(function() {
             gWindow.BrowserApp.getTabForId(gLastTabId).browser.contentDocument.documentElement.innerHTML = html;
-        }, 5000);
+        }, 3000);
     },
 
     getURIFlags: function(uri) {
