@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <vbox xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+	<setting pref="extensions.aboutlogcat.nodups" type="bool" title="Skip duplicates"></setting>
 	<setting pref="extensions.aboutlogcat.html" type="bool" title="Use Coloured HTML"></setting>
 	<setting pref="extensions.aboutlogcat.reverse" type="bool" title="Reverse mode">
 		Show entries in reverse (ie, newer first) mode.
