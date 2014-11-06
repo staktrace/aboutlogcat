@@ -57,6 +57,7 @@ AboutLogcat.prototype = {
         var content = 'data:text/html;charset=UTF-8,';
         var channel = Services.io.newChannel(content + encodeURIComponent(message), null, null);
         channel.originalURI = uri;
+        channel.owner = Cc["@mozilla.org/systemprincipal;1"].getService(Ci.nsIPrincipal);
         return channel;
     },
 
@@ -64,6 +65,7 @@ AboutLogcat.prototype = {
         let reverse = gPrefService.getPrefType('reverse') && gPrefService.getBoolPref('reverse');
         let html = gPrefService.getPrefType('html') && gPrefService.getBoolPref('html');
         let filter = gPrefService.getPrefType('filter') && gPrefService.getCharPref('filter');
+        let nodups = gPrefService.getPrefType('nodups') && gPrefService.getBoolPref('nodups');
 
         let fcb = s => s;
         if (filter) {
@@ -88,10 +90,27 @@ AboutLogcat.prototype = {
             logcat = logcat.reverse();
         }
 
-        logcat = logcat.map(ln => fcb(ln) && ln || '').filter(String);
+        logcat = logcat.map(ln => fcb(ln) && ln || '');
+
+        if (nodups) {
+            let lastLine = '';
+            logcat = logcat.map(ln => {
+                let tmp = ln.substr(19);
+                return tmp == lastLine ? '' : (lastLine = tmp, ln);
+            });
+        }
+        logcat = logcat.filter(String);
 
         if (html) {
-            logcat = logcat.map(ln => '<div class="' + ln.split(/\s+/)[4] + '">' + ln + '</div>');
+            // logcat = logcat.map(ln => '<div class="' + ln.split(/\s+/)[4] + '">' + ln + '</div>');
+            logcat = logcat.map(ln => {
+                if (/\{file: "/.test(ln)) {
+                    ln = ln.replace(/\{file: "([^"]+)"/, function(x,f) {
+                        return '{file: "<a href="view-source:'+f.split(" -> ").pop()+'">'+f+'</a>"';
+                    });
+                }
+                return '<div class="' + ln.split(/\s+/)[4] + '">' + ln + '</div>';
+            });
             var n = logcat.length;
             logcat = '<head>\n'
                 + '<meta name="viewport" content="width=1000">\n'
